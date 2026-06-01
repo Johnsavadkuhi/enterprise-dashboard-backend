@@ -1,0 +1,22 @@
+import http from "http";
+import { createApp } from "@/app/app";
+import { env } from "@/config/env";
+import { connectDB } from "@/db/connect";
+import { setupSocket } from "@/realtime/socket/server";
+
+async function bootstrap() {
+  await connectDB();
+
+  const app = createApp();
+  const server = http.createServer(app);
+  setupSocket(server);
+
+  server.listen(env.port, () => {
+    console.log(`Backend running on http://localhost:${env.port}`);
+  });
+}
+
+bootstrap().catch((error) => {
+  console.error("Failed to start server", error);
+  process.exit(1);
+});
