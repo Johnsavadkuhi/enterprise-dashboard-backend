@@ -57,6 +57,7 @@ export const me: RequestHandler = async (req, res, next) => {
   try {
     if (!req.user) throw new AppError("Unauthorized", HTTP_STATUS.UNAUTHORIZED);
     const user = await UserModel.findById(req.user.id);
+    console.log("user : " , user ,  user?.toAuthJSON())
     if (!user) throw new AppError("Unauthorized", HTTP_STATUS.UNAUTHORIZED);
     sendSuccess(res, user.toAuthJSON());
   } catch (error) {
