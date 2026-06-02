@@ -18,10 +18,9 @@ When it runs:
 
 Rules:
 
-- Project creation requires a name, project type, and optional description.
+- Project creation requires `projectName`, project type, and optional description.
 - User assignment requires a non-empty `userIds` array.
 
 Why it exists:
 
 - Controllers should not manually validate request body shape.
-

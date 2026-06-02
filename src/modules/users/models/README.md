@@ -14,9 +14,10 @@ When it runs:
 
 Fields:
 
-- `name`
-- `email`
-- `passwordHash`
+- `firstName`
+- `lastName`
+- `username`
+- `password`
 - `avatarUrl`
 - `roles`
 - `customPermissions`
@@ -34,4 +35,3 @@ Important behavior:
 Why it exists:
 
 - This is the central identity model of the backend.
-

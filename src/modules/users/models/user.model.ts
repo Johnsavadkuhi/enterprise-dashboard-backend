@@ -14,8 +14,8 @@ type UserLike = {
   qualityAssurance?: boolean;
 };
 
-function nameParts(name?: string) {
-  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+function identityParts(value?: string) {
+  const parts = (value || "").trim().split(/\s+/).filter(Boolean);
   return {
     firstName: parts[0] || "User",
     lastName: parts.slice(1).join(" ") || parts[0] || "User",
@@ -46,11 +46,8 @@ const userSchema = new Schema(
   {
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
-    name: { type: String, trim: true },
     username: { type: String, required: true, unique: true, trim: true },
     password: { type: String, required: true, select: false },
-    refreshToken: { type: [String], default: [] },
-    profileImageUrl: { type: String },
     avatarUrl: { type: String },
     roles: { type: Schema.Types.Mixed, default: [ROLES.PENTESTER] },
     customPermissions: { type: [String], default: [] },
@@ -59,7 +56,7 @@ const userSchema = new Schema(
     devOps: { type: Boolean, default: false },
     security: { type: Boolean, default: false },
     qualityAssurance: { type: Boolean, default: false },
-    userProject: [{ type: Schema.Types.ObjectId, ref: "ProjectUser" }],
+    userProject: [{ type: Schema.Types.ObjectId, ref: "ProjectAssignment" }],
     projectIds: [{ type: Schema.Types.ObjectId, ref: "Project" }],
     sessionVersion: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
@@ -68,18 +65,14 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("validate", function () {
-  if (!this.name) this.name = [this.firstName, this.lastName].filter(Boolean).join(" ");
-
   if (!this.firstName || !this.lastName) {
-    const fallbackName = this.name || this.username || undefined;
-    const { firstName, lastName } = nameParts(fallbackName);
+    const fallbackName = this.username || undefined;
+    const { firstName, lastName } = identityParts(fallbackName);
     this.firstName ||= firstName;
     this.lastName ||= lastName;
   }
 
   if (!this.username) this.username = `${this.firstName}.${this.lastName}`.toLowerCase();
-  if (!this.avatarUrl && this.profileImageUrl) this.avatarUrl = this.profileImageUrl;
-  if (!this.profileImageUrl && this.avatarUrl) this.profileImageUrl = this.avatarUrl;
   if (this.isActive === undefined) this.isActive = this.status !== "Inactive";
 });
 
@@ -91,9 +84,10 @@ userSchema.methods.toAuthJSON = function () {
 
   return {
     id: this._id.toString(),
-    name: this.name || [this.firstName, this.lastName].filter(Boolean).join(" "),
+    firstName: this.firstName,
+    lastName: this.lastName,
     username: this.username,
-    avatarUrl: this.avatarUrl || this.profileImageUrl,
+    avatarUrl: this.avatarUrl,
     roles,
     permissions,
     sessionVersion: this.sessionVersion || 0,
@@ -103,7 +97,7 @@ userSchema.methods.toAuthJSON = function () {
 
 export type UserDocument = InferSchemaType<typeof userSchema> & {
   _id: mongoose.Types.ObjectId;
-  toAuthJSON: () => Express.UserContext & { name: string; avatarUrl?: string };
+  toAuthJSON: () => Express.UserContext & { firstName: string; lastName: string; avatarUrl?: string };
 };
 
 export const UserModel = mongoose.model<UserDocument>("User", userSchema);

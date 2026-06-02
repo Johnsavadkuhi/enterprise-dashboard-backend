@@ -6,6 +6,8 @@ declare global {
   namespace Express {
     interface UserContext {
       id: string;
+      firstName: string;
+      lastName: string;
       username: string;
       roles: Role[];
       permissions: Permission[];

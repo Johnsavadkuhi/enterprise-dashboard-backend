@@ -3,7 +3,7 @@ import { PROJECT_TYPE_VALUES } from "@/constants/projects";
 
 export const createProjectSchema = z.object({
   body: z.object({
-    name: z.string().min(2),
+    projectName: z.string().min(2),
     type: z.enum(PROJECT_TYPE_VALUES),
     description: z.string().optional(),
   }),

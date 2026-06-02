@@ -11,11 +11,11 @@ function getProjectId(req: Parameters<RequestHandler>[0], source: ProjectIdSourc
   return req.body?.projectId;
 }
 
-export function canAccessProject(user: Express.UserContext, project: { ownerId: unknown; assignedUserIds: unknown[] }) {
+export function canAccessProject(user: Express.UserContext, project: { ownerId?: unknown; assignedUserIds?: unknown[] }) {
   return (
     user.roles.includes(ROLES.ADMIN) ||
-    String(project.ownerId) === user.id ||
-    project.assignedUserIds.some((userId) => String(userId) === user.id)
+    (project.ownerId ? String(project.ownerId) === user.id : false) ||
+    (project.assignedUserIds || []).some((userId) => String(userId) === user.id)
   );
 }
 

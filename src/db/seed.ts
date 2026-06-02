@@ -13,7 +13,6 @@ async function seed() {
     {
       firstName: "Admin",
       lastName: "User",
-      name: "Admin User",
       username: "admin",
       password,
       roles: [ROLES.ADMIN],

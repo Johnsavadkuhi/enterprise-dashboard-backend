@@ -18,10 +18,9 @@ When it runs:
 
 Validation rules:
 
-- Login requires valid email and password with minimum length.
-- Register requires name, valid email, password, and optional avatar URL.
+- Login requires username and password with minimum length.
+- Register accepts first name, last name, username, password, and optional avatar URL.
 
 Why it exists:
 
 - Auth controllers should only receive valid request bodies.
-

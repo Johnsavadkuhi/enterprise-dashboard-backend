@@ -11,18 +11,39 @@ export const PROJECT_TYPE_VALUES = [
 ] as const;
 
 export const PROJECT_STATUS = {
-  DRAFT: "draft",
-  ACTIVE: "active",
-  PAUSED: "paused",
-  COMPLETED: "completed",
+  OPEN: "open",
+  IN_PROGRESS: "in_progress",
+  PENDING: "pending",
+  FINISHED: "finished",
+  REMOVED: "removed",
 } as const;
 
 export const PROJECT_STATUS_VALUES = [
-  PROJECT_STATUS.DRAFT,
-  PROJECT_STATUS.ACTIVE,
-  PROJECT_STATUS.PAUSED,
-  PROJECT_STATUS.COMPLETED,
+  PROJECT_STATUS.OPEN,
+  PROJECT_STATUS.IN_PROGRESS,
+  PROJECT_STATUS.PENDING,
+  PROJECT_STATUS.FINISHED,
+  PROJECT_STATUS.REMOVED,
+] as const;
+
+export const PROJECT_ASSIGNMENT_STATUS = PROJECT_STATUS;
+export const PROJECT_ASSIGNMENT_STATUS_VALUES = PROJECT_STATUS_VALUES;
+
+export const PROJECT_ASSIGNMENT_ROLES = {
+  PENTESTER: "pentester",
+  QA: "qa",
+  DEVOPS: "devops",
+  MANAGER: "manager",
+} as const;
+
+export const PROJECT_ASSIGNMENT_ROLE_VALUES = [
+  PROJECT_ASSIGNMENT_ROLES.PENTESTER,
+  PROJECT_ASSIGNMENT_ROLES.QA,
+  PROJECT_ASSIGNMENT_ROLES.DEVOPS,
+  PROJECT_ASSIGNMENT_ROLES.MANAGER,
 ] as const;
 
 export type ProjectType = (typeof PROJECT_TYPES)[keyof typeof PROJECT_TYPES];
 export type ProjectStatus = (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
+export type ProjectAssignmentStatus = (typeof PROJECT_ASSIGNMENT_STATUS)[keyof typeof PROJECT_ASSIGNMENT_STATUS];
+export type ProjectAssignmentRole = (typeof PROJECT_ASSIGNMENT_ROLES)[keyof typeof PROJECT_ASSIGNMENT_ROLES];

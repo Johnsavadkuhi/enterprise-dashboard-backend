@@ -13,11 +13,9 @@ export async function registerUser(
   input: {
     firstName?: string;
     lastName?: string;
-    name?: string;
     username: string;
     password: string;
     avatarUrl?: string;
-    profileImageUrl?: string;
   },
   context?: AuthRequestContext
 ) {
@@ -28,11 +26,9 @@ export async function registerUser(
   const user = await UserModel.create({
     firstName: input.firstName,
     lastName: input.lastName,
-    name: input.name,
     username: input.username,
     password,
-    avatarUrl: input.avatarUrl || input.profileImageUrl,
-    profileImageUrl: input.profileImageUrl || input.avatarUrl,
+    avatarUrl: input.avatarUrl,
   });
 
   const authUser = user.toAuthJSON();

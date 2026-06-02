@@ -34,7 +34,7 @@ export const createProject: RequestHandler = async (req, res, next) => {
       action: AUDIT_ACTIONS.PROJECT_CREATE,
       entityType: AUDIT_ENTITY_TYPES.PROJECT,
       entityId: project._id.toString(),
-      metadata: { name: project.name, type: project.type },
+      metadata: { projectName: project.projectName, type: project.type },
     });
 
     sendSuccess(res, { ...project.toObject(), id: project._id.toString() }, HTTP_STATUS.CREATED);
@@ -62,7 +62,7 @@ export const assignUsersToProject: RequestHandler = async (req, res, next) => {
           projectId,
           type: NOTIFICATION_TYPES.PROJECT_ASSIGNED,
           title: "You were assigned to a project",
-          message: `You have been assigned to ${project?.name || "a project"}.`,
+          message: `You have been assigned to ${project?.projectName || "a project"}.`,
           priority: NOTIFICATION_PRIORITIES.HIGH,
           actionUrl: ROUTES.FRONTEND.PROJECT_DETAILS(projectId),
         })

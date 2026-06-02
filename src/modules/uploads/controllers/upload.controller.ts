@@ -18,7 +18,11 @@ export const uploadAvatar: RequestHandler = async (req, res, next) => {
     }
 
     const avatarUrl = UPLOADS.PUBLIC_PATH(req.file.filename);
-    const user = await UserModel.findByIdAndUpdate(req.user.id, { $set: { avatarUrl } }, { new: true });
+    const user = await UserModel.findByIdAndUpdate(
+      req.user.id,
+      { $set: { avatarUrl } },
+      { new: true }
+    );
 
     await writeAuditLog({
       req,
