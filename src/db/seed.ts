@@ -6,14 +6,16 @@ import { ROLES } from "@/constants/roles";
 async function seed() {
   await connectDB();
 
-  const passwordHash = await bcrypt.hash("12345678", 12);
+  const password = await bcrypt.hash("12345678", 12);
 
   await UserModel.findOneAndUpdate(
-    { email: "admin@example.com" },
+    { username: "admin" },
     {
+      firstName: "Admin",
+      lastName: "User",
       name: "Admin User",
-      email: "admin@example.com",
-      passwordHash,
+      username: "admin",
+      password,
       roles: [ROLES.ADMIN],
       isActive: true,
     },

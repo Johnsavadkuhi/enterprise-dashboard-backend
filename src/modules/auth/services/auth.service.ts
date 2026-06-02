@@ -10,18 +10,29 @@ type AuthRequestContext = {
 };
 
 export async function registerUser(
-  input: { name: string; email: string; password: string; avatarUrl?: string },
+  input: {
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    username: string;
+    password: string;
+    avatarUrl?: string;
+    profileImageUrl?: string;
+  },
   context?: AuthRequestContext
 ) {
-  const exists = await UserModel.exists({ email: input.email });
-  if (exists) throw new AppError("Email already exists", HTTP_STATUS.CONFLICT);
+  const exists = await UserModel.exists({ username: input.username });
+  if (exists) throw new AppError("User already exists", HTTP_STATUS.CONFLICT);
 
-  const passwordHash = await bcrypt.hash(input.password, 12);
+  const password = await bcrypt.hash(input.password, 12);
   const user = await UserModel.create({
+    firstName: input.firstName,
+    lastName: input.lastName,
     name: input.name,
-    email: input.email,
-    passwordHash,
-    avatarUrl: input.avatarUrl,
+    username: input.username,
+    password,
+    avatarUrl: input.avatarUrl || input.profileImageUrl,
+    profileImageUrl: input.profileImageUrl || input.avatarUrl,
   });
 
   const authUser = user.toAuthJSON();
@@ -31,12 +42,17 @@ export async function registerUser(
   };
 }
 
-export async function loginUser(input: { email: string; password: string }, context?: AuthRequestContext) {
-  const user = await UserModel.findOne({ email: input.email }).select("+passwordHash");
-  if (!user || !user.isActive) throw new AppError("Invalid email or password", HTTP_STATUS.UNAUTHORIZED);
+export async function loginUser(
+  input: { username: string; password: string },
+  context?: AuthRequestContext
+) {
+  const user = await UserModel.findOne({ username: input.username }).select("+password");
+  if (!user || user.status === "Inactive" || user.isActive === false) {
+    throw new AppError("Invalid username or password", HTTP_STATUS.UNAUTHORIZED);
+  }
 
-  const valid = await bcrypt.compare(input.password, user.passwordHash);
-  if (!valid) throw new AppError("Invalid email or password", HTTP_STATUS.UNAUTHORIZED);
+  const valid = user.password ? await bcrypt.compare(input.password, user.password) : false;
+  if (!valid) throw new AppError("Invalid username or password", HTTP_STATUS.UNAUTHORIZED);
 
   const authUser = user.toAuthJSON();
   return {

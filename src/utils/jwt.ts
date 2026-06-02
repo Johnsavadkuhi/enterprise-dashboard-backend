@@ -6,7 +6,7 @@ import type { Permission } from "@/constants/permissions";
 
 export type JwtPayload = {
   id: string;
-  email: string;
+  username: string;
   roles: Role[];
   permissions: Permission[];
   sessionVersion: number;

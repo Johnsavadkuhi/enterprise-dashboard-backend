@@ -9,7 +9,10 @@ import { UserModel } from "../models/user.model";
 export const getUsers: RequestHandler = async (_req, res, next) => {
   try {
     const users = await UserModel.find().sort({ createdAt: -1 });
-    sendSuccess(res, users.map((user) => user.toAuthJSON()));
+    sendSuccess(
+      res,
+      users.map((user) => user.toAuthJSON())
+    );
   } catch (error) {
     next(error);
   }
@@ -46,8 +49,8 @@ export const updateUserRolesPermissions: RequestHandler = async (req, res, next)
 
 export const createUser: RequestHandler = async (req, res, next) => {
   try {
-    const passwordHash = await bcrypt.hash(req.body.password, 12);
-    const user = await UserModel.create({ ...req.body, passwordHash });
+    const password = await bcrypt.hash(req.body.password, 12);
+    const user = await UserModel.create({ ...req.body, password });
     await writeAuditLog({
       req,
       action: AUDIT_ACTIONS.USER_CREATE,
