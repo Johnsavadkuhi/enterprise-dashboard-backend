@@ -9,20 +9,18 @@ import { sendSuccess } from "@/utils/response";
 
 export const uploadAvatar: RequestHandler = async (req, res, next) => {
   try {
-    if (!req.user) {
-      throw new AppError("Unauthorized", HTTP_STATUS.UNAUTHORIZED);
-    }
-
     if (!req.file) {
       throw new AppError("Avatar file is required", HTTP_STATUS.BAD_REQUEST);
     }
 
     const avatarUrl = UPLOADS.PUBLIC_PATH(req.file.filename);
-    const user = await UserModel.findByIdAndUpdate(
-      req.user.id,
-      { $set: { avatarUrl } },
-      { new: true }
-    );
+    const user = req.user
+      ? await UserModel.findByIdAndUpdate(
+          req.user.id,
+          { $set: { avatarUrl } },
+          { new: true }
+        )
+      : null;
 
     await writeAuditLog({
       req,
@@ -33,7 +31,7 @@ export const uploadAvatar: RequestHandler = async (req, res, next) => {
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
         size: req.file.size,
-        userId: req.user.id,
+        userId: req.user?.id,
       },
     });
 

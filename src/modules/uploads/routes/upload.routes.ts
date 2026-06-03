@@ -7,7 +7,6 @@ import { HTTP_STATUS } from "@/constants/http";
 import { ROUTES } from "@/constants/routes";
 import { UPLOADS } from "@/constants/uploads";
 import { env } from "@/config/env";
-import { requireAuth } from "@/middlewares/auth.middleware";
 import { AppError } from "@/utils/AppError";
 import { uploadAvatar } from "../controllers/upload.controller";
 
@@ -44,7 +43,18 @@ const upload = multer({
 
 const router = Router();
 
-router.use(requireAuth);
-router.post(ROUTES.UPLOAD.AVATAR, upload.single(UPLOADS.AVATAR_FIELD), uploadAvatar);
+router.post(
+  ROUTES.UPLOAD.AVATAR,
+  upload.fields([
+    { name: UPLOADS.AVATAR_FIELD, maxCount: 1 },
+    { name: UPLOADS.AVATAR_FIELD_ALIAS, maxCount: 1 },
+  ]),
+  (req, _res, next) => {
+    const files = req.files as Record<string, Express.Multer.File[]> | undefined;
+    req.file = files?.[UPLOADS.AVATAR_FIELD]?.[0] || files?.[UPLOADS.AVATAR_FIELD_ALIAS]?.[0];
+    next();
+  },
+  uploadAvatar
+);
 
 export default router;

@@ -13,6 +13,7 @@ const safeMethods = new Set<string>([HTTP_METHODS.GET, HTTP_METHODS.HEAD, HTTP_M
 const publicUnsafeRoutes = new Set([
   `${HTTP_METHODS.POST} ${API_ENDPOINTS.AUTH_LOGIN}`,
   `${HTTP_METHODS.POST} ${API_ENDPOINTS.AUTH_REGISTER}`,
+  `${HTTP_METHODS.POST} ${API_ENDPOINTS.AUTH_LOGOUT}`,
 ]);
 
 function createSecret() {
