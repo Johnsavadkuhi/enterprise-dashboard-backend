@@ -10,6 +10,7 @@ import { loginUser, registerUser } from "../services/auth.service";
 import { refreshAuthSession, revokeRefreshSession } from "../services/session.service";
 import { UserModel } from "@/modules/users/models/user.model";
 import { AppError } from "@/utils/AppError";
+import { toAuthUserContext } from "@/modules/users/services/userAuth.service";
 
 export const register: RequestHandler = async (req, res, next) => {
   try {
@@ -57,9 +58,8 @@ export const me: RequestHandler = async (req, res, next) => {
   try {
     if (!req.user) throw new AppError("Unauthorized", HTTP_STATUS.UNAUTHORIZED);
     const user = await UserModel.findById(req.user.id);
-    console.log("user : " , user ,  user?.toAuthJSON())
     if (!user) throw new AppError("Unauthorized", HTTP_STATUS.UNAUTHORIZED);
-    sendSuccess(res, user.toAuthJSON());
+    sendSuccess(res, await toAuthUserContext(user));
   } catch (error) {
     next(error);
   }

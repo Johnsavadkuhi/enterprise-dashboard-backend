@@ -1,5 +1,6 @@
 import mongoose, { Schema, type InferSchemaType } from "mongoose";
 import { ROLES, type Role } from "@/constants/roles";
+import { PERMISSIONS, type Permission } from "@/constants/permissions";
 import { getPermissionsFromRoles } from "@/constants/rolePermissions";
 
 type LegacyRoles = {
@@ -7,8 +8,13 @@ type LegacyRoles = {
   Admin?: number;
 };
 
-type UserLike = {
+export type UserLike = {
   roles?: Role[] | LegacyRoles;
+  customPermissions?: Permission[];
+  permissionOverrides?: {
+    allow?: Permission[];
+    deny?: Permission[];
+  } | null;
   devOps?: boolean;
   security?: boolean;
   qualityAssurance?: boolean;
@@ -22,7 +28,7 @@ function identityParts(value?: string) {
   };
 }
 
-function normalizeRoles(user: UserLike): Role[] {
+export function normalizeRoles(user: UserLike): Role[] {
   const legacyRoles = user.roles;
   const roles = new Set<Role>();
 
@@ -42,15 +48,64 @@ function normalizeRoles(user: UserLike): Role[] {
   return Array.from(roles);
 }
 
+function uniquePermissions(permissions: Permission[] = []) {
+  return Array.from(new Set(permissions));
+}
+
+export function resolveUserPermissions(user: UserLike, basePermissions = getPermissionsFromRoles(normalizeRoles(user))): Permission[] {
+  const permissions = new Set<Permission>([
+    ...basePermissions,
+    ...(user.customPermissions || []),
+    ...(user.permissionOverrides?.allow || []),
+  ]);
+
+  for (const permission of user.permissionOverrides?.deny || []) {
+    permissions.delete(permission);
+  }
+
+  return Array.from(permissions);
+}
+
 const userSchema = new Schema(
   {
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
-    username: { type: String, required: true, unique: true, trim: true },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
     password: { type: String, required: true, select: false },
     avatarUrl: { type: String },
-    roles: { type: Schema.Types.Mixed, default: [ROLES.PENTESTER] },
-    customPermissions: { type: [String], default: [] },
+    roles: {
+      type: [String],
+      enum: Object.values(ROLES),
+      default: [ROLES.PENTESTER],
+      validate: {
+        validator: (roles: string[]) => roles.length > 0,
+        message: "A user must have at least one role",
+      },
+    },
+    permissionOverrides: {
+      allow: {
+        type: [String],
+        enum: Object.values(PERMISSIONS),
+        default: [],
+      },
+
+      deny: {
+        type: [String],
+        enum: Object.values(PERMISSIONS),
+        default: [],
+      },
+    },
+    customPermissions: {
+      type: [String],
+      enum: Object.values(PERMISSIONS),
+      default: [],
+    },
     status: { type: String, default: "Active" },
     score: { type: Number, default: 0 },
     devOps: { type: Boolean, default: false },
@@ -74,12 +129,17 @@ userSchema.pre("validate", function () {
 
   if (!this.username) this.username = `${this.firstName}.${this.lastName}`.toLowerCase();
   if (this.isActive === undefined) this.isActive = this.status !== "Inactive";
+  this.roles = Array.from(new Set(normalizeRoles(this as UserLike)));
+  this.customPermissions = uniquePermissions(this.customPermissions as Permission[]);
+  this.permissionOverrides = {
+    allow: uniquePermissions(this.permissionOverrides?.allow as Permission[]),
+    deny: uniquePermissions(this.permissionOverrides?.deny as Permission[]),
+  };
 });
 
 userSchema.methods.toAuthJSON = function () {
   const roles = normalizeRoles(this);
-  const rolePermissions = getPermissionsFromRoles(roles);
-  const permissions = Array.from(new Set([...rolePermissions, ...(this.customPermissions || [])]));
+  const permissions = resolveUserPermissions(this as UserLike);
   const projectIds = this.projectIds?.length ? this.projectIds : this.userProject || [];
 
   return {
@@ -90,6 +150,7 @@ userSchema.methods.toAuthJSON = function () {
     avatarUrl: this.avatarUrl,
     roles,
     permissions,
+    permissionOverrides: this.permissionOverrides || { allow: [], deny: [] },
     sessionVersion: this.sessionVersion || 0,
     projectIds: projectIds.map(String),
   };

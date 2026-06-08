@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { UserModel } from "@/modules/users/models/user.model";
+import { toAuthUserContext } from "@/modules/users/services/userAuth.service";
 import { HTTP_STATUS } from "@/constants/http";
 import { AppError } from "@/utils/AppError";
 import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToken } from "@/utils/jwt";
@@ -56,7 +57,7 @@ async function getActiveAuthUser(userId: string) {
     throw new AppError("Unauthorized", HTTP_STATUS.UNAUTHORIZED);
   }
 
-  return user.toAuthJSON();
+  return toAuthUserContext(user);
 }
 
 function assertCurrentSession(authUser: Express.UserContext, tokenSessionVersion: number) {

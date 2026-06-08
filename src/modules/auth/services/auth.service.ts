@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { HTTP_STATUS } from "@/constants/http";
 import { UserModel } from "@/modules/users/models/user.model";
+import { toAuthUserContext } from "@/modules/users/services/userAuth.service";
 import { AppError } from "@/utils/AppError";
 import { issueSessionTokens } from "./session.service";
 
@@ -31,7 +32,7 @@ export async function registerUser(
     avatarUrl: input.avatarUrl,
   });
 
-  const authUser = user.toAuthJSON();
+  const authUser = await toAuthUserContext(user);
   return {
     user: authUser,
     ...(await issueSessionTokens(authUser, context)),
@@ -50,7 +51,7 @@ export async function loginUser(
   const valid = user.password ? await bcrypt.compare(input.password, user.password) : false;
   if (!valid) throw new AppError("Invalid username or password", HTTP_STATUS.UNAUTHORIZED);
 
-  const authUser = user.toAuthJSON();
+  const authUser = await toAuthUserContext(user);
   return {
     user: authUser,
     ...(await issueSessionTokens(authUser, context)),

@@ -4,6 +4,7 @@ import { HTTP_STATUS } from "@/constants/http";
 import { UPLOADS } from "@/constants/uploads";
 import { writeAuditLog } from "@/modules/audit/services/audit.service";
 import { UserModel } from "@/modules/users/models/user.model";
+import { toAuthUserContext } from "@/modules/users/services/userAuth.service";
 import { AppError } from "@/utils/AppError";
 import { sendSuccess } from "@/utils/response";
 
@@ -37,7 +38,7 @@ export const uploadAvatar: RequestHandler = async (req, res, next) => {
 
     sendSuccess(res, {
       avatarUrl,
-      user: user?.toAuthJSON(),
+      user: user ? await toAuthUserContext(user) : null,
     });
   } catch (error) {
     next(error);
