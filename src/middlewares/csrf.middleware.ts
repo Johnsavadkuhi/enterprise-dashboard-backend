@@ -51,6 +51,8 @@ function isPublicUnsafeRoute(req: Request) {
 export function createCsrfToken(res: Response, existingSecret?: string) {
   const secret = existingSecret || createSecret();
   const csrfToken = signSecret(secret);
+  console.log("secret******** : " , secret )
+  console.log("csrf token : " , csrfToken)
 
   setCsrfCookie(res, secret);
 
