@@ -70,7 +70,7 @@ export const csrfProtection: RequestHandler = (req, res, next) => {
 
   const secret = req.cookies?.[csrfCookieName];
   const token = getTokenFromRequest(req);
-
+  console.log("secret : " ,secret  , "\n csrf token : " , token)
   if (!secret || !token || !safeCompare(signSecret(secret), token)) {
     clearCsrfCookie(res);
     return next(new AppError("Invalid CSRF token", HTTP_STATUS.FORBIDDEN));

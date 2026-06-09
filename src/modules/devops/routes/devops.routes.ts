@@ -7,11 +7,11 @@ import { PERMISSIONS } from "@/constants/permissions";
 import { sendSuccess } from "@/utils/response";
 const router = Router();
 router.use(requireAuth);
-router.get(ROUTES.DEVOPS.DEPLOYMENTS, requirePermission(PERMISSIONS.DEPLOYMENTS_READ), (_req, res) =>
+router.get(ROUTES.DEVOPS.DEPLOYMENTS, requirePermission(PERMISSIONS.DEVOPS_DEPLOYMENT_READ), (_req, res) =>
   sendSuccess(res, [])
 );
-router.post(ROUTES.DEVOPS.DEPLOYMENTS, requirePermission(PERMISSIONS.DEPLOYMENTS_CREATE), (req, res) =>
+router.post(ROUTES.DEVOPS.DEPLOYMENTS, requirePermission(PERMISSIONS.DEVOPS_DEPLOYMENT_CREATE), (req, res) =>
   sendSuccess(res, req.body, HTTP_STATUS.CREATED)
 );
-router.get(ROUTES.DEVOPS.SERVERS, requirePermission(PERMISSIONS.SERVERS_READ), (_req, res) => sendSuccess(res, []));
+router.get(ROUTES.DEVOPS.SERVERS, requirePermission(PERMISSIONS.DEVOPS_SERVER_READ), (_req, res) => sendSuccess(res, []));
 export default router;

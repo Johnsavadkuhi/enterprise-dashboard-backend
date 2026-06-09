@@ -1,10 +1,12 @@
-import { getPermissionsForRoles } from "./role.service";
+import { getPermissionMapForRoles } from "./role.service";
 import { normalizeRoles, resolveUserPermissions, type UserDocument } from "../models/user.model";
 
 export async function toAuthUserContext(user: UserDocument) {
   const roles = normalizeRoles(user);
-  const rolePermissions = await getPermissionsForRoles(roles);
-  const permissions = resolveUserPermissions(user, rolePermissions);
+  console.log(" roles from normalize Role  : " ,  roles )
+  const rolePermissions = await getPermissionMapForRoles(roles);
+  console.log("rolePermissions : "  , rolePermissions)
+  const permissions = resolveUserPermissions(user, Object.values(rolePermissions).flat());
   const projectIds = user.projectIds?.length ? user.projectIds : user.userProject || [];
 
   return {

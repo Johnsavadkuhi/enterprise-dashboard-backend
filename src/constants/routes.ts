@@ -17,6 +17,7 @@ export const ROUTES = {
   USERS: {
     BASE: "/api/users",
     ROLES: "/roles",
+    ROLES_SYNC_PERMISSIONS: "/roles/sync-permissions",
     ROLE_PERMISSIONS: "/roles/:key/permissions",
     ROLES_PERMISSIONS: "/:id/roles-permissions",
   },

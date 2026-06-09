@@ -8,6 +8,6 @@ import { getAuditLogs } from "../controllers/audit.controller";
 const router = Router();
 
 router.use(requireAuth);
-router.get(ROUTES.ROOT, requirePermission(PERMISSIONS.AUDIT_LOGS_READ), getAuditLogs);
+router.get(ROUTES.ROOT, requirePermission(PERMISSIONS.ADMIN_AUDIT_READ), getAuditLogs);
 
 export default router;

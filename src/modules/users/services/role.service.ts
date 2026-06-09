@@ -13,6 +13,8 @@ const ROLE_NAMES: Record<Role, string> = {
   [ROLES.PROJECT_MANAGER_QA]: "Project Manager QA",
 };
 
+const VALID_PERMISSIONS = new Set<Permission>(Object.values(PERMISSIONS));
+
 function toRoleResponse(role: RoleDocument) {
   return {
     id: role._id.toString(),
@@ -22,6 +24,16 @@ function toRoleResponse(role: RoleDocument) {
     permissions: role.permissions,
     isSystem: role.isSystem,
   };
+}
+
+function normalizeStoredPermissions(role: Role, permissions: string[] = []) {
+  const hasLegacyPermissions = permissions.some((permission) => !VALID_PERMISSIONS.has(permission as Permission));
+
+  if (hasLegacyPermissions) {
+    return ROLE_PERMISSIONS[role] || [];
+  }
+
+  return Array.from(new Set(permissions as Permission[]));
 }
 
 export async function ensureDefaultRoles() {
@@ -40,6 +52,23 @@ export async function ensureDefaultRoles() {
         { upsert: true, runValidators: true }
       )
     )
+  );
+
+  const roles = await RoleModel.find();
+  await Promise.all(
+    roles.map((role) => {
+      const permissions = normalizeStoredPermissions(role.key, role.permissions);
+
+      if (
+        permissions.length === role.permissions.length &&
+        permissions.every((permission, index) => permission === role.permissions[index])
+      ) {
+        return Promise.resolve();
+      }
+
+      role.permissions = permissions;
+      return role.save();
+    })
   );
 }
 
@@ -66,19 +95,43 @@ export async function updateRolePermissions(role: Role, permissions: Permission[
   return toRoleResponse(updated);
 }
 
+export async function syncRolePermissionsFromConstants() {
+  const roles = await Promise.all(
+    Object.values(ROLES).map((role) =>
+      RoleModel.findOneAndUpdate(
+        { key: role },
+        {
+          $set: {
+            name: ROLE_NAMES[role],
+            permissions: ROLE_PERMISSIONS[role] || [],
+            isSystem: true,
+          },
+          $setOnInsert: { key: role },
+        },
+        { new: true, upsert: true, runValidators: true }
+      )
+    )
+  );
+
+  return roles.map(toRoleResponse);
+}
+
 export async function getPermissionsForRoles(roles: Role[] = []) {
+  const rolePermissions = await getPermissionMapForRoles(roles);
+
+  return Array.from(new Set(Object.values(rolePermissions).flat()));
+}
+
+export async function getPermissionMapForRoles(roles: Role[]) {
   const uniqueRoles = Array.from(new Set(roles));
   const roleDocs = await RoleModel.find({ key: { $in: uniqueRoles } });
   const permissionsByRole = new Map<Role, Permission[]>(roleDocs.map((role) => [role.key, role.permissions]));
 
-  return Array.from(
-    new Set(
-      uniqueRoles.flatMap((role) => {
-        const savedPermissions = permissionsByRole.get(role);
-        return savedPermissions || ROLE_PERMISSIONS[role] || [];
-      })
-    )
-  );
+  return uniqueRoles.reduce<Partial<Record<Role, Permission[]>>>((result, role) => {
+    const savedPermissions = permissionsByRole.get(role);
+    result[role] = savedPermissions ? normalizeStoredPermissions(role, savedPermissions) : ROLE_PERMISSIONS[role] || [];
+    return result;
+  }, {});
 }
 
 export function getAllPermissionOptions() {

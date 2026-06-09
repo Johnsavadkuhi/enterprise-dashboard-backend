@@ -7,7 +7,12 @@ import { writeAuditLog } from "@/modules/audit/services/audit.service";
 import { AppError } from "@/utils/AppError";
 import { sendSuccess } from "@/utils/response";
 import { UserModel } from "../models/user.model";
-import { getAllPermissionOptions, getRolesForDashboard, updateRolePermissions } from "../services/role.service";
+import {
+  getAllPermissionOptions,
+  getRolesForDashboard,
+  syncRolePermissionsFromConstants,
+  updateRolePermissions,
+} from "../services/role.service";
 import { toAuthUserContext } from "../services/userAuth.service";
 
 export const getUsers: RequestHandler = async (_req, res, next) => {
@@ -102,6 +107,27 @@ export const updateRolePermissionsForDashboard: RequestHandler = async (req, res
     });
 
     sendSuccess(res, role);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const syncRolePermissionsForDashboard: RequestHandler = async (req, res, next) => {
+  try {
+    const roles = await syncRolePermissionsFromConstants();
+
+    await writeAuditLog({
+      req,
+      action: AUDIT_ACTIONS.USER_ROLES_UPDATE,
+      entityType: AUDIT_ENTITY_TYPES.USER,
+      entityId: "role-permissions",
+      metadata: { roles: roles.map((role) => role.key) },
+    });
+
+    sendSuccess(res, {
+      roles,
+      permissions: getAllPermissionOptions(),
+    });
   } catch (error) {
     next(error);
   }
