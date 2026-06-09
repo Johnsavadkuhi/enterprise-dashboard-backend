@@ -605,7 +605,7 @@ When it runs: At the end of the middleware chain.
 What it does:
 
 - `notFoundHandler` throws a 404 `AppError`.
-- `errorHandler` converts errors into `{ success: false, error: { message } }`.
+- `errorHandler` converts errors into `{ success: false, error: { message, statusCode } }`.
 - Hides unknown internal error messages.
 
 Why it exists: Keeps error responses consistent.

@@ -13,7 +13,6 @@ const safeMethods = new Set<string>([HTTP_METHODS.GET, HTTP_METHODS.HEAD, HTTP_M
 const publicUnsafeRoutes = new Set([
   `${HTTP_METHODS.POST} ${API_ENDPOINTS.AUTH_LOGIN}`,
   `${HTTP_METHODS.POST} ${API_ENDPOINTS.AUTH_REGISTER}`,
-  `${HTTP_METHODS.POST} ${API_ENDPOINTS.AUTH_LOGOUT}`,
 ]);
 
 function createSecret() {
@@ -51,8 +50,6 @@ function isPublicUnsafeRoute(req: Request) {
 export function createCsrfToken(res: Response, existingSecret?: string) {
   const secret = existingSecret || createSecret();
   const csrfToken = signSecret(secret);
-  console.log("secret******** : " , secret )
-  console.log("csrf token : " , csrfToken)
 
   setCsrfCookie(res, secret);
 
@@ -60,6 +57,10 @@ export function createCsrfToken(res: Response, existingSecret?: string) {
 }
 
 export const csrfTokenHandler: RequestHandler = (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+
   const csrfToken = createCsrfToken(res, req.cookies?.[csrfCookieName]);
 
   sendSuccess(res, { csrfToken });
@@ -72,7 +73,7 @@ export const csrfProtection: RequestHandler = (req, res, next) => {
 
   const secret = req.cookies?.[csrfCookieName];
   const token = getTokenFromRequest(req);
-  console.log("secret : " ,secret  , "\n csrf token : " , token)
+
   if (!secret || !token || !safeCompare(signSecret(secret), token)) {
     clearCsrfCookie(res);
     return next(new AppError("Invalid CSRF token", HTTP_STATUS.FORBIDDEN));

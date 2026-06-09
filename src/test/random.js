@@ -4,7 +4,7 @@ const tokenEncoding = "base64url";
 
 
 function createSecret() {
-  return crypto.randomBytes(32).toString(tokenEncoding);
+  return crypto.randomBytes(64).toString("hex");
 }
 
 console.log(createSecret())

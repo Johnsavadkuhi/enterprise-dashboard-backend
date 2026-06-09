@@ -62,7 +62,7 @@ When it runs:
 What it does:
 
 - Converts not-found requests to 404.
-- Formats errors as `{ success: false, error: { message } }`.
+- Formats errors as `{ success: false, error: { message, statusCode } }`.
 - Hides unknown internal errors.
 
 Why it exists:
@@ -123,4 +123,3 @@ What it does:
 Why it exists:
 
 - Controllers should receive valid request data.
-
