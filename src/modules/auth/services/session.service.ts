@@ -45,7 +45,10 @@ export async function issueSessionTokens(authUser: Express.UserContext, context:
   });
 
   return {
-    accessToken: signAccessToken(authUser),
+    accessToken: signAccessToken({
+      id: authUser.id,
+      sessionVersion: authUser.sessionVersion,
+    }),
     refreshToken,
   };
 }

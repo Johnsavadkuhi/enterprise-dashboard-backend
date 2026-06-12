@@ -46,7 +46,7 @@ export async function loginUser(
   console.log(input)
   const user = await UserModel.findOne({ username: input.username }).select("+password");
   
-    console.log(user)
+    console.log("user : " , user )
 
   if (!user || user.status === "Inactive" || user.isActive === false) {
     throw new AppError("Invalid username or password", HTTP_STATUS.UNAUTHORIZED);

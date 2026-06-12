@@ -1,23 +1,17 @@
 import jwt from "jsonwebtoken";
 import type { StringValue } from "ms";
 import { env } from "@/config/env";
-import type { Role } from "@/constants/roles";
-import type { Permission } from "@/constants/permissions";
 
-export type JwtPayload = {
+export type AccessTokenPayload = {
   id: string;
-  username: string;
-  roles: Role[];
-  permissions: Permission[];
   sessionVersion: number;
-  projectIds?: string[];
 };
 
-export type RefreshTokenPayload = Pick<JwtPayload, "id" | "sessionVersion"> & {
+export type RefreshTokenPayload = AccessTokenPayload & {
   tokenId: string;
 };
 
-export function signAccessToken(payload: JwtPayload) {
+export function signAccessToken(payload: AccessTokenPayload) {
   return jwt.sign(payload, env.jwtAccessSecret, { expiresIn: env.accessTokenTtl as StringValue });
 }
 
@@ -26,7 +20,7 @@ export function signRefreshToken(payload: RefreshTokenPayload) {
 }
 
 export function verifyAccessToken(token: string) {
-  return jwt.verify(token, env.jwtAccessSecret) as JwtPayload;
+  return jwt.verify(token, env.jwtAccessSecret) as AccessTokenPayload;
 }
 
 export function verifyRefreshToken(token: string) {

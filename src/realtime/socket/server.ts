@@ -11,7 +11,7 @@ let ioInstance: Server | null = null;
 export function setupSocket(server: HttpServer) {
   const io = new Server(server, {
     cors: {
-      origin: env.clientUrl,
+      origin: env.clientUrls,
       credentials: true,
     },
   });
