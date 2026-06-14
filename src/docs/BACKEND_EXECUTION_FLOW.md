@@ -204,7 +204,8 @@ Browser opens Socket.IO connection
   -> socket:connected event is emitted
 ```
 
-Notifications use `getIO()` to emit `notification:new` to user and project rooms.
+Notifications use the realtime delivery helper to emit `notification:new` only to
+the target user's private room. Project rooms carry non-private project events.
 
 ## 6. API Response Contract
 
@@ -915,7 +916,7 @@ What it does:
 - Creates a notification document.
 - Builds a response/event payload.
 - Emits `notification:new` to `user:{id}`.
-- Emits to `project:{id}` when projectId exists.
+- Emits private notifications only to `user:{id}`.
 
 Why it exists: Notification persistence and Socket.IO delivery should happen together.
 
@@ -1090,6 +1091,8 @@ What it does:
 - Reloads live user via `getAuthUserFromAccessToken()`.
 - Joins user, role, and project rooms.
 - Emits `socket:connected`.
+- Uses reusable delivery and room-management helpers.
+- Uses the Redis adapter when `SOCKET_REDIS_URL` or `REDIS_URL` is configured.
 - Stores the initialized `io` instance for later use.
 
 Why it exists: Keeps realtime notification transport separate from HTTP controllers.

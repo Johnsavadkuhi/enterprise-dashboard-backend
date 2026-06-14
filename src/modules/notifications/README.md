@@ -8,7 +8,7 @@ The notifications module stores notifications in MongoDB and sends realtime upda
 Business action
   -> createNotification(...)
   -> NotificationModel.create(...)
-  -> getIO().to(...).emit(...)
+  -> emitToUser(...)
 
 /api/notifications
   -> requireAuth
@@ -28,4 +28,4 @@ Business action
 ## Why This Module Exists
 
 Users need persistent notifications for later reading and realtime events for immediate updates.
-
+Notification documents are private and are never broadcast to project or role rooms.

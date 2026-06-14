@@ -16,7 +16,8 @@ When it runs:
 Fields:
 
 - `projectName`: project name.
-- `type` / `projectType`: project category, with legacy compatibility.
+- `type`: canonical project category for all new writes.
+- `projectType`: legacy read-compatible category; new documents do not write it.
 - `description`: optional description.
 - `status`: project lifecycle status.
 - `ownerId`: user who owns the project.

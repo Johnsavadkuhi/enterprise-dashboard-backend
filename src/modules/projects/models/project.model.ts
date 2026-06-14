@@ -31,11 +31,19 @@ const projectSchema = new Schema(
     status: { type: String, enum: PROJECT_STATUS_VALUES, default: PROJECT_STATUS.OPEN },
     ownerId: { type: Schema.Types.ObjectId, ref: "User" },
 
+    // Legacy production field. New code must write `type` only.
+    // Kept for reading documents created before the canonical field existed.
+    projectType: { type: [String], default: undefined },
+
     // Legacy-compatible project identity fields.
     letterNumber: { type: String, trim: true },
     version: { type: String, trim: true },
-    projectType: { type: [String], default: [] },
     platform: { type: [String], default: [] },
+    certificateRequired: { type: Boolean, default: false },
+    certificateAuthorities: {
+      type: [{ type: String, trim: true }],
+      default: [],
+    },
     descriptions: { type: [String], default: undefined },
     identifier: projectIdentifierSchema,
 
@@ -43,6 +51,7 @@ const projectSchema = new Schema(
     projectManager: { type: Schema.Types.ObjectId, ref: "User" },
     qualityManager: { type: Schema.Types.ObjectId, ref: "User" },
     devops: { type: Schema.Types.ObjectId, ref: "User" },
+    representative: { type: Schema.Types.ObjectId, ref: "User" },
 
     // Temporary compatibility fields. ProjectAssignment should become the source of truth.
     assignedUserIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
@@ -61,10 +70,8 @@ const projectSchema = new Schema(
 projectSchema.pre("validate", function () {
   this.ownerId ||= this.projectManager;
 
-  if (!this.projectType?.length && this.type) {
-    this.projectType = [this.type];
-  }
-
+  // One-way compatibility: old documents can populate the canonical field,
+  // but new canonical writes never recreate the legacy field.
   if (!this.type && this.projectType?.length) {
     const [firstType] = this.projectType;
     if ((PROJECT_TYPE_VALUES as readonly string[]).includes(firstType)) {
@@ -90,6 +97,7 @@ projectSchema.index({ projectType: 1, status: 1 });
 projectSchema.index({ projectManager: 1, status: 1 });
 projectSchema.index({ qualityManager: 1, status: 1 });
 projectSchema.index({ devops: 1, status: 1 });
+projectSchema.index({ representative: 1, status: 1 });
 projectSchema.index({ assignedUserIds: 1, status: 1 });
 projectSchema.index({ userProject: 1 });
 projectSchema.index({ letterNumber: 1 });

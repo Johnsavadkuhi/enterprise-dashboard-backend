@@ -1,9 +1,11 @@
+import type { NotificationDocument } from "../models/notification.model";
 import { NotificationModel } from "../models/notification.model";
 import { type NotificationPriority, type NotificationType } from "@/constants/notifications";
-import { SOCKET_EVENTS, SOCKET_ROOMS } from "@/constants/socket";
-import { getIO } from "@/realtime/socket/server";
+import { SOCKET_EVENTS } from "@/constants/socket";
+import { emitToUser } from "@/realtime/socket.delivery";
+import type { NotificationPayload } from "@/realtime/socket.types";
 
-type CreateNotificationInput = {
+export type CreateNotificationInput = {
   userId: string;
   projectId?: string;
   type: NotificationType;
@@ -14,31 +16,38 @@ type CreateNotificationInput = {
   entityId?: string;
 };
 
-export async function createNotification(input: CreateNotificationInput) {
-  const notification = await NotificationModel.create({
-    ...input,
-    isRead: false,
-  });
-
-  const payload = {
+export function serializeNotification(
+  notification: NotificationDocument
+): NotificationPayload {
+  return {
     id: notification._id.toString(),
-    type: notification.type,
+    type: notification.type as NotificationType,
     title: notification.title,
     message: notification.message,
     priority: notification.priority,
     isRead: notification.isRead,
     userId: String(notification.userId),
     projectId: notification.projectId ? String(notification.projectId) : undefined,
-    entityId: notification.entityId,
-    actionUrl: notification.actionUrl,
+    entityId: notification.entityId || undefined,
+    actionUrl: notification.actionUrl || undefined,
     createdAt: notification.createdAt,
   };
+}
 
-  getIO().to(SOCKET_ROOMS.USER(input.userId)).emit(SOCKET_EVENTS.NOTIFICATION_NEW, payload);
+export async function createNotification(input: CreateNotificationInput) {
+  const notification = await NotificationModel.create({
+    ...input,
+    isRead: false,
+  });
 
-  if (input.projectId) {
-    getIO().to(SOCKET_ROOMS.PROJECT(input.projectId)).emit(SOCKET_EVENTS.NOTIFICATION_NEW, payload);
-  }
+  const payload = serializeNotification(notification);
+  emitToUser(input.userId, SOCKET_EVENTS.NOTIFICATION_NEW, payload);
 
   return payload;
+}
+
+export async function createNotifications(
+  inputs: readonly CreateNotificationInput[]
+): Promise<NotificationPayload[]> {
+  return Promise.all(inputs.map(createNotification));
 }
