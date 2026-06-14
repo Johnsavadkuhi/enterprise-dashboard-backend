@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
 import { HTTP_STATUS } from "@/constants/http";
+import type { Role } from "@/constants/roles";
 import { UserModel } from "@/modules/users/models/user.model";
-import { toAuthUserContext } from "@/modules/users/services/userAuth.service";
+import { getDefaultPermissionsForRoles, toAuthUserContext, upsertUserPermissions } from "@/modules/users/services/userAuth.service";
 import { AppError } from "@/utils/AppError";
 import { issueSessionTokens } from "./session.service";
 
@@ -17,6 +18,7 @@ export async function registerUser(
     username: string;
     password: string;
     avatarUrl?: string;
+    roles?: Role[];
   },
   context?: AuthRequestContext
 ) {
@@ -30,7 +32,10 @@ export async function registerUser(
     username: input.username,
     password,
     avatarUrl: input.avatarUrl,
+    roles: input.roles,
   });
+
+  await upsertUserPermissions(user._id.toString(), await getDefaultPermissionsForRoles(user.roles as Role[]));
 
   const authUser = await toAuthUserContext(user);
   return {
@@ -43,10 +48,7 @@ export async function loginUser(
   input: { username: string; password: string },
   context?: AuthRequestContext
 ) {
-  console.log(input)
   const user = await UserModel.findOne({ username: input.username }).select("+password");
-  
-    console.log("user : " , user )
 
   if (!user || user.status === "Inactive" || user.isActive === false) {
     throw new AppError("Invalid username or password", HTTP_STATUS.UNAUTHORIZED);

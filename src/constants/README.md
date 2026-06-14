@@ -37,6 +37,20 @@ Why it exists:
 
 - `HTTP_STATUS.UNAUTHORIZED` is clearer and safer than raw `401`.
 
+### `cors.ts`
+
+Defines default development CORS origins.
+
+Used by:
+
+- env configuration
+- Express CORS through `env.clientUrls`
+- Socket.IO CORS through `env.clientUrls`
+
+Why it exists:
+
+- Frontend origins should be added in one constant file instead of searching through app setup code.
+
 ### `notifications.ts`
 
 Defines notification types and notification priorities.
@@ -81,16 +95,15 @@ Why it exists:
 
 ### `rolePermissions.ts`
 
-Maps roles to permissions and exports `getPermissionsFromRoles()`.
+Maps default roles to permissions and exports `getPermissionsFromRoles()`.
 
 Used by:
 
-- `UserModel.toAuthJSON()`
+- role seeding and fallback role-permission resolution
 
 When it runs:
 
-- It is loaded when the user model is imported.
-- `getPermissionsFromRoles()` runs whenever `toAuthJSON()` is called.
+- It is loaded by role services when default role permissions are needed.
 
 Why it exists:
 
@@ -179,4 +192,3 @@ Used by:
 Why it exists:
 
 - Vulnerability severity/status values are part of the domain model and should be type-safe.
-

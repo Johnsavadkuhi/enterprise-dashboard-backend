@@ -18,8 +18,11 @@ Route chain:
 router.use(requireAuth)
 GET   /                      -> requirePermission(USERS_READ) -> getUsers
 POST  /                      -> requirePermission(USERS_CREATE) -> createUser
+PUT   /:userId               -> requirePermission(USERS_UPDATE) -> updateUserRolesPermissions
 PATCH /:id/roles-permissions -> requirePermission(USERS_UPDATE) -> updateUserRolesPermissions
 ```
+
+`PUT /api/users/:userId` is the frontend user-management endpoint for updating a user's roles and effective permissions.
 
 When it runs:
 
@@ -29,4 +32,3 @@ When it runs:
 Why it exists:
 
 - Protects all user-management operations with authentication and permissions.
-

@@ -130,7 +130,7 @@ requirePermission(PERMISSIONS.PROJECTS_CREATE)
 requireProjectAccess("params.id")
 ```
 
-Every access/refresh token includes the user's `id` and `sessionVersion`. `requireAuth` reloads the current user from MongoDB on each request, checks the token's `sessionVersion`, and then uses the live roles, permissions and project assignments for authorization. Updating a user's roles or custom permissions increments `sessionVersion`, which invalidates their old tokens.
+Every access/refresh token includes the user's `id` and `sessionVersion`. `requireAuth` reloads the current user from MongoDB on each request, checks the token's `sessionVersion`, and then uses the live roles, permissions and project assignments for authorization. Updating a user's roles or permissions increments `sessionVersion`, which invalidates their old tokens.
 
 Frontend dashboard routing should use `GET /api/auth/me` and check the returned permissions, for example `admin.dashboard.read` for the admin dashboard or `pentest.dashboard.read` for the pentest dashboard.
 
@@ -240,6 +240,7 @@ Users:
 ```txt
 GET   /api/users
 POST  /api/users
+PUT   /api/users/:userId
 PATCH /api/users/:id/roles-permissions
 ```
 

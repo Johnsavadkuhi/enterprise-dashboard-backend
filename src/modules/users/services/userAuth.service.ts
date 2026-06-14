@@ -1,12 +1,42 @@
-import { getPermissionMapForRoles } from "./role.service";
-import { normalizeRoles, resolveUserPermissions, type UserDocument } from "../models/user.model";
+import type { Permission } from "@/constants/permissions";
+import type { Role } from "@/constants/roles";
+import { getPermissionsForRoles } from "./role.service";
+import { normalizeRoles, type UserDocument } from "../models/user.model";
+import { UserPermissionModel } from "../models/userPermission.model";
+
+function uniquePermissions(permissions: Permission[] = []) {
+  return Array.from(new Set(permissions));
+}
+
+export async function getDefaultPermissionsForRoles(roles: Role[]) {
+  return uniquePermissions(await getPermissionsForRoles(roles));
+}
+
+export async function upsertUserPermissions(userId: string, permissions: Permission[]) {
+  const unique = uniquePermissions(permissions);
+
+  await UserPermissionModel.findOneAndUpdate(
+    { userId },
+    {
+      $set: { permissions: unique },
+      $setOnInsert: { userId },
+    },
+    { upsert: true, runValidators: true }
+  );
+
+  return unique;
+}
+
+export async function getOrCreateUserPermissions(user: UserDocument, roles = normalizeRoles(user)) {
+  const existing = await UserPermissionModel.findOne({ userId: user._id });
+  if (existing) return uniquePermissions(existing.permissions);
+
+  return upsertUserPermissions(user._id.toString(), await getDefaultPermissionsForRoles(roles));
+}
 
 export async function toAuthUserContext(user: UserDocument) {
   const roles = normalizeRoles(user);
-  console.log(" roles from normalize Role  : " ,  roles )
-  const rolePermissions = await getPermissionMapForRoles(roles);
-  console.log("rolePermissions : "  , rolePermissions)
-  const permissions = resolveUserPermissions(user, Object.values(rolePermissions).flat());
+  const permissions = await getOrCreateUserPermissions(user, roles);
   const projectIds = user.projectIds?.length ? user.projectIds : user.userProject || [];
 
   return {
@@ -17,7 +47,6 @@ export async function toAuthUserContext(user: UserDocument) {
     avatarUrl: user.avatarUrl,
     roles,
     permissions,
-    permissionOverrides: user.permissionOverrides || { allow: [], deny: [] },
     sessionVersion: user.sessionVersion || 0,
     projectIds: projectIds.map(String),
   };

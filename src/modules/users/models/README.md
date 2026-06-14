@@ -1,6 +1,6 @@
 # User Models
 
-This folder defines user persistence and auth-safe user serialization.
+This folder defines user persistence, role persistence, and per-user permission persistence.
 
 ## Files
 
@@ -20,7 +20,6 @@ Fields:
 - `password`
 - `avatarUrl`
 - `roles`
-- `customPermissions`
 - `projectIds`
 - `sessionVersion`
 - `isActive`
@@ -29,8 +28,24 @@ Important behavior:
 
 - `passwordHash` uses `select: false`, so it is not returned unless explicitly selected.
 - `roles` default to pentester.
-- `toAuthJSON()` computes effective permissions from roles plus custom permissions.
 - `sessionVersion` is included in auth context so tokens can be invalidated after role changes.
+
+### `role.model.ts`
+
+Defines `RoleModel`.
+
+Role permissions are stored here in the `permissions` field. These are the baseline permissions for each role.
+
+### `userPermission.model.ts`
+
+Defines `UserPermissionModel`.
+
+Effective per-user permissions are stored here:
+
+- `userId`
+- `permissions`
+
+`permissions` is initialized from the user's roles during registration or user creation. If a user has multiple roles, role permissions are merged before being written.
 
 Why it exists:
 

@@ -19,7 +19,7 @@ When it runs:
 Validation rules:
 
 - Login requires username and password with minimum length.
-- Register accepts first name, last name, username, password, and optional avatar URL.
+- Register accepts first name, last name, username, password, optional avatar URL, and optional roles.
 
 Why it exists:
 

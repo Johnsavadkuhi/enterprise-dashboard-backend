@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { DEFAULT_CORS_ORIGINS } from "@/constants/cors";
 
 dotenv.config();
 
@@ -8,7 +9,7 @@ const clientUrls = process.env.CLIENT_URLS
   ? process.env.CLIENT_URLS.split(",").map((url) => url.trim().replace(/\/$/, "")).filter(Boolean)
   : nodeEnv === "production"
     ? [clientUrl]
-    : [clientUrl, "http://localhost:4173"];
+    : DEFAULT_CORS_ORIGINS;
 
 export const env = {
   nodeEnv,

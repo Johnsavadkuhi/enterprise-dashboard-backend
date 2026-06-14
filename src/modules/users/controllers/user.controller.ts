@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from "@/constants/audit";
 import { HTTP_STATUS } from "@/constants/http";
 import type { Role } from "@/constants/roles";
+import type { Permission } from "@/constants/permissions";
 import { writeAuditLog } from "@/modules/audit/services/audit.service";
 import { AppError } from "@/utils/AppError";
 import { sendSuccess } from "@/utils/response";
@@ -13,7 +14,11 @@ import {
   syncRolePermissionsFromConstants,
   updateRolePermissions,
 } from "../services/role.service";
-import { toAuthUserContext } from "../services/userAuth.service";
+import { getDefaultPermissionsForRoles, toAuthUserContext, upsertUserPermissions } from "../services/userAuth.service";
+
+async function getPermissionsForUserUpdate(roles: Role[], permissions?: Permission[]) {
+  return Array.isArray(permissions) ? permissions : getDefaultPermissionsForRoles(roles);
+}
 
 export const getUsers: RequestHandler = async (_req, res, next) => {
   try {
@@ -29,20 +34,17 @@ export const getUsers: RequestHandler = async (_req, res, next) => {
 
 export const updateUserRolesPermissions: RequestHandler = async (req, res, next) => {
   try {
-    const userId = String(req.params.id);
-    const permissionOverrides = {
-      allow: req.body.permissionOverrides?.allow || req.body.customPermissions || [],
-      deny: req.body.permissionOverrides?.deny || [],
-    };
+    const userId = String(req.params.id || req.params.userId);
+    const roles = req.body.roles as Role[];
+    const permissions = await getPermissionsForUserUpdate(roles, req.body.permissions);
 
     const user = await UserModel.findByIdAndUpdate(
       userId,
       {
         $set: {
-          roles: req.body.roles,
-          permissionOverrides,
-          customPermissions: req.body.customPermissions || [],
+          roles,
         },
+        $inc: { sessionVersion: 1 },
       },
       { new: true, runValidators: true }
     );
@@ -51,12 +53,14 @@ export const updateUserRolesPermissions: RequestHandler = async (req, res, next)
       throw new AppError("User not found", HTTP_STATUS.NOT_FOUND);
     }
 
+    await upsertUserPermissions(userId, permissions);
+
     await writeAuditLog({
       req,
       action: AUDIT_ACTIONS.USER_ROLES_UPDATE,
       entityType: AUDIT_ENTITY_TYPES.USER,
       entityId: userId,
-      metadata: { roles: req.body.roles, permissionOverrides },
+      metadata: { roles, permissions },
     });
 
     sendSuccess(res, await toAuthUserContext(user));
@@ -68,7 +72,12 @@ export const updateUserRolesPermissions: RequestHandler = async (req, res, next)
 export const createUser: RequestHandler = async (req, res, next) => {
   try {
     const password = await bcrypt.hash(req.body.password, 12);
-    const user = await UserModel.create({ ...req.body, password });
+    const { permissions: requestedPermissions, ...userInput } = req.body;
+    const user = await UserModel.create({ ...userInput, password });
+    const roles = user.roles as Role[];
+    const permissions = await getPermissionsForUserUpdate(roles, requestedPermissions);
+    await upsertUserPermissions(user._id.toString(), permissions);
+
     await writeAuditLog({
       req,
       action: AUDIT_ACTIONS.USER_CREATE,

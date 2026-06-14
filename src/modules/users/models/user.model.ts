@@ -1,7 +1,5 @@
 import mongoose, { Schema, type InferSchemaType } from "mongoose";
 import { ROLES, type Role } from "@/constants/roles";
-import { PERMISSIONS, type Permission } from "@/constants/permissions";
-import { getPermissionsFromRoles } from "@/constants/rolePermissions";
 
 type LegacyRoles = {
   User?: number;
@@ -10,11 +8,6 @@ type LegacyRoles = {
 
 export type UserLike = {
   roles?: Role[] | LegacyRoles;
-  customPermissions?: Permission[];
-  permissionOverrides?: {
-    allow?: Permission[];
-    deny?: Permission[];
-  } | null;
   devOps?: boolean;
   security?: boolean;
   qualityAssurance?: boolean;
@@ -48,24 +41,6 @@ export function normalizeRoles(user: UserLike): Role[] {
   return Array.from(roles);
 }
 
-function uniquePermissions(permissions: Permission[] = []) {
-  return Array.from(new Set(permissions));
-}
-
-export function resolveUserPermissions(user: UserLike, basePermissions = getPermissionsFromRoles(normalizeRoles(user))): Permission[] {
-  const permissions = new Set<Permission>([
-    ...basePermissions,
-    ...(user.customPermissions || []),
-    ...(user.permissionOverrides?.allow || []),
-  ]);
-
-  for (const permission of user.permissionOverrides?.deny || []) {
-    permissions.delete(permission);
-  }
-
-  return Array.from(permissions);
-}
-
 const userSchema = new Schema(
   {
     firstName: { type: String, required: true, trim: true },
@@ -87,24 +62,6 @@ const userSchema = new Schema(
         validator: (roles: string[]) => roles.length > 0,
         message: "A user must have at least one role",
       },
-    },
-    permissionOverrides: {
-      allow: {
-        type: [String],
-        enum: Object.values(PERMISSIONS),
-        default: [],
-      },
-
-      deny: {
-        type: [String],
-        enum: Object.values(PERMISSIONS),
-        default: [],
-      },
-    },
-    customPermissions: {
-      type: [String],
-      enum: Object.values(PERMISSIONS),
-      default: [],
     },
     status: { type: String, default: "Active" },
     score: { type: Number, default: 0 },
@@ -130,35 +87,10 @@ userSchema.pre("validate", function () {
   if (!this.username) this.username = `${this.firstName}.${this.lastName}`.toLowerCase();
   if (this.isActive === undefined) this.isActive = this.status !== "Inactive";
   this.roles = Array.from(new Set(normalizeRoles(this as UserLike)));
-  this.customPermissions = uniquePermissions(this.customPermissions as Permission[]);
-  this.permissionOverrides = {
-    allow: uniquePermissions(this.permissionOverrides?.allow as Permission[]),
-    deny: uniquePermissions(this.permissionOverrides?.deny as Permission[]),
-  };
 });
-
-userSchema.methods.toAuthJSON = function () {
-  const roles = normalizeRoles(this);
-  const permissions = resolveUserPermissions(this as UserLike);
-  const projectIds = this.projectIds?.length ? this.projectIds : this.userProject || [];
-
-  return {
-    id: this._id.toString(),
-    firstName: this.firstName,
-    lastName: this.lastName,
-    username: this.username,
-    avatarUrl: this.avatarUrl,
-    roles,
-    permissions,
-    permissionOverrides: this.permissionOverrides || { allow: [], deny: [] },
-    sessionVersion: this.sessionVersion || 0,
-    projectIds: projectIds.map(String),
-  };
-};
 
 export type UserDocument = InferSchemaType<typeof userSchema> & {
   _id: mongoose.Types.ObjectId;
-  toAuthJSON: () => Express.UserContext & { firstName: string; lastName: string; avatarUrl?: string };
 };
 
 export const UserModel = mongoose.model<UserDocument>("User", userSchema);

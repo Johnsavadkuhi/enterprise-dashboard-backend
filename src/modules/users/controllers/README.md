@@ -21,7 +21,7 @@ Handler details:
 #### `getUsers`
 
 - Reads users sorted newest first.
-- Converts each user with `toAuthJSON`.
+- Converts each user with `toAuthUserContext`.
 - Returns safe user data.
 
 #### `createUser`
@@ -33,7 +33,7 @@ Handler details:
 
 #### `updateUserRolesPermissions`
 
-- Updates roles and custom permissions.
+- Updates `UserModel.roles` and `UserPermissionModel.permissions`.
 - Increments `sessionVersion`.
 - Incrementing `sessionVersion` invalidates old access/refresh tokens.
 - Writes `user.roles_update` audit log.
@@ -42,4 +42,3 @@ Handler details:
 Why it exists:
 
 - User management is an admin-level feature and needs auditability.
-

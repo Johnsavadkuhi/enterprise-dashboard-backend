@@ -382,7 +382,7 @@ Why it exists: Permissions are the core authorization contract.
 
 Purpose: Maps roles to permissions.
 
-When it runs: Imported by `UserModel.toAuthJSON()`.
+When it runs: Imported by role services when default role permissions are needed.
 
 What it does:
 
@@ -390,7 +390,7 @@ What it does:
 - Exports `getPermissionsFromRoles()`.
 - Admin receives all permissions via `Object.values(PERMISSIONS)`.
 
-Why it exists: It converts roles into effective permissions.
+Why it exists: It defines the default permission set for each role.
 
 #### `src/constants/projects.ts`
 
@@ -788,16 +788,17 @@ Important fields:
 
 - `passwordHash` is `select: false` by default.
 - `roles` defaults to pentester.
-- `customPermissions` supplements role permissions.
 - `projectIds` stores assigned projects.
 - `sessionVersion` invalidates old tokens when incremented.
 - `isActive` disables users.
 
-Important method:
+Related permission storage:
 
-- `toAuthJSON()` returns safe auth context with effective permissions.
+- `RoleModel.permissions` stores baseline permissions for each role.
+- `UserPermissionModel.permissions` stores the effective permission list for each user.
+- `toAuthUserContext()` returns safe auth context with effective permissions.
 
-Why it exists: User identity, authorization data, and session invalidation are centered here.
+Why it exists: User identity, role assignment, project assignment, and session invalidation are centered here.
 
 #### `src/modules/users/controllers/user.controller.ts`
 
@@ -807,7 +808,7 @@ Handlers:
 
 - `getUsers`: returns users as auth-safe JSON.
 - `createUser`: hashes password, creates user, writes audit log.
-- `updateUserRolesPermissions`: updates roles/custom permissions, increments `sessionVersion`, writes audit log.
+- `updateUserRolesPermissions`: updates roles and permissions, increments `sessionVersion`, writes audit log.
 
 Why it exists: Admin user management lives here.
 

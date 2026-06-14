@@ -37,5 +37,11 @@ router.patch(
   validate(updateUserRolesPermissionsSchema),
   updateUserRolesPermissions
 );
+router.put(
+  ROUTES.USERS.DETAIL,
+  requirePermission(PERMISSIONS.ADMIN_USERS_UPDATE),
+  validate(updateUserRolesPermissionsSchema),
+  updateUserRolesPermissions
+);
 
 export default router;

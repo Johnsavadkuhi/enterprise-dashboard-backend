@@ -8,18 +8,15 @@ const permissionValues = Object.values(PERMISSIONS) as [string, ...string[]];
 const permissionListSchema = z.array(z.enum(permissionValues)).default([]);
 
 export const updateUserRolesPermissionsSchema = z.object({
-  params: z.object({
-    id: z.string().min(1, "User id is required"),
-  }),
+  params: z
+    .object({
+      id: z.string().min(1, "User id is required").optional(),
+      userId: z.string().min(1, "User id is required").optional(),
+    })
+    .refine((params) => params.id || params.userId, "User id is required"),
   body: z.object({
     roles: z.array(z.enum(roleValues)).min(1, "A user must have at least one role"),
-    permissionOverrides: z
-      .object({
-        allow: permissionListSchema,
-        deny: permissionListSchema,
-      })
-      .default({ allow: [], deny: [] }),
-    customPermissions: permissionListSchema.optional(),
+    permissions: permissionListSchema.optional(),
   }),
   query: z.object({}).optional(),
 });
