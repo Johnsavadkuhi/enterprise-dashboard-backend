@@ -50,12 +50,32 @@ export interface ServerToClientEvents {
   "project:assigned": (payload: ProjectEventPayload) => void;
 }
 
+
+
 export interface ClientToServerEvents {}
 export interface InterServerEvents {}
 
 export interface SocketData {
   user: AuthenticatedSocketUser;
 }
+
+export type AuthenticatedSocketData = {
+  user: {
+    id: string;
+    username: string;
+    roles: string[];
+    sessionVersion: number;
+  };
+};
+
+
+export type RealtimeSocket = Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  AuthenticatedSocketData
+>;
+
 
 export type RealtimeServer = Server<
   ClientToServerEvents,
