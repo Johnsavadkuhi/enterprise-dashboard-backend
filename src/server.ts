@@ -2,21 +2,21 @@ import http from "http";
 import { createApp } from "@/app/app";
 import { env } from "@/config/env";
 import { connectDB } from "@/db/connect";
-import { closeSocket, setupSocket } from "@/realtime/socket/server";
+import { setupSocket } from "@/realtime/socket.server";
 
 async function bootstrap() {
   await connectDB();
 
   const app = createApp();
   const server = http.createServer(app);
-  await setupSocket(server);
+   setupSocket(server);
 
   server.listen(env.port, () => {
     console.log(`Backend running on http://localhost:${env.port}`);
   });
 
   const shutdown = async () => {
-    await closeSocket();
+    // await closeSocket();
     process.exit(0);
   };
 
