@@ -33,23 +33,22 @@
 //   };
 // }
 
-
 // src/realtime/socket.auth.ts
 
 import { parse as parseCookie } from "cookie";
-import type { ExtendedError, Socket } from "socket.io";
+import type { ExtendedError } from "socket.io";
 
 import { COOKIE_NAMES } from "@/constants/security";
 import { getAuthUserFromAccessToken } from "@/modules/auth/services/session.service";
+import type { RealtimeSocket } from "./socket.types";
 
 export async function socketAuthMiddleware(
-  socket: Socket,
+  socket: RealtimeSocket,
   next: (err?: ExtendedError) => void
 ) {
   try {
-    const rawCookie =  socket.handshake.headers.cookie;
+    const rawCookie = socket.handshake.headers.cookie;
 
-    
     console.log("[socket:auth] checking socket auth", {
       socketId: socket.id,
       hasCookie: Boolean(rawCookie),
@@ -59,13 +58,17 @@ export async function socketAuthMiddleware(
     if (!rawCookie) {
       return next(new Error("Unauthorized"));
     }
-    const parsedCookies = parseCookie(rawCookie)
+
+    const parsedCookies = parseCookie(rawCookie);
 
     const accessToken = parsedCookies[COOKIE_NAMES.ACCESS_TOKEN];
 
-    
     if (!accessToken) {
-      console.log("[socket:auth] access token not found");
+      console.log("[socket:auth] access token not found", {
+        expectedCookieName: COOKIE_NAMES.ACCESS_TOKEN,
+        availableCookieNames: Object.keys(parsedCookies),
+      });
+
       return next(new Error("Unauthorized"));
     }
 
@@ -76,12 +79,19 @@ export async function socketAuthMiddleware(
       return next(new Error("Unauthorized"));
     }
 
-    socket.data.user = user;
+    socket.data.user = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user?.username,
+      roles: user?.roles ,
+      sessionVersion: user?.sessionVersion,
+    };
 
     console.log("[socket:auth] success", {
       socketId: socket.id,
-      userId: user.id,
-      roles: user.roles,
+      userId: socket.data.user.id,
+      roles: socket.data.user.roles,
     });
 
     next();

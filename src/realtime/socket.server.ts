@@ -4,14 +4,29 @@ import { Server as SocketIOServer } from "socket.io";
 import type { Server as HttpServer } from "http";
 
 import { socketAuthMiddleware } from "./socket.auth";
-import { getInitialRooms } from "./socket.rooms";
+import type {
+  ClientToServerEvents,
+  InterServerEvents,
+  ServerToClientEvents,
+  SocketData,
+  RealtimeServer,
+} from "./socket.types";
 
-let ioInstance: SocketIOServer | null = null;
+import { SOCKET_EVENTS } from "@/constants/socket";
 
-export function setupSocket(server: HttpServer): SocketIOServer {
+
+let ioInstance: RealtimeServer | null = null;
+
+export function setupSocket(server: HttpServer): RealtimeServer {
   if (ioInstance) return ioInstance;
 
-  const io = new SocketIOServer(server, {
+  const io: RealtimeServer = new SocketIOServer<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >(server, {
+    path: "/socket.io",
     cors: {
       origin: ["http://localhost:5173"],
       credentials: true,
@@ -28,47 +43,45 @@ export function setupSocket(server: HttpServer): SocketIOServer {
     });
   });
 
-  /**
-   * Auth middleware
-   * If this fails, io.on("connection") will NOT run.
-   */
   io.use(socketAuthMiddleware);
 
-  io.on("connection", async (socket) => {
+  io.on("connection", (socket) => {
     const user = socket.data.user;
 
-    console.log("user : " , user )
+    if (!user) {
+      console.log("[socket] connected without user, disconnecting", {
+        socketId: socket.id,
+      });
+
+      socket.disconnect(true);
+      return;
+    }
+
     console.log("[socket] connected", {
       socketId: socket.id,
       userId: user.id,
       roles: user.roles,
     });
 
-    const rooms = getInitialRooms(user);
-
-    await socket.join(rooms);
-
-    console.log("[socket] rooms joined", {
-      socketId: socket.id,
-      rooms,
-    });
-
-    socket.emit("socket:connected", {
+    socket.emit(SOCKET_EVENTS.CONNECTED, {
       ok: true,
       socketId: socket.id,
       userId: user.id,
-      rooms,
+      roles: user.roles,
+      connectedAt: new Date().toISOString(),
     });
 
-    socket.on("ping:server", (payload) => {
+    socket.on(SOCKET_EVENTS.PING_SERVER, (payload) => {
       console.log("[socket] ping from client", {
+        socketId: socket.id,
         userId: user.id,
         payload,
       });
 
-      socket.emit("pong:client", {
+      socket.emit(SOCKET_EVENTS.PONG_CLIENT, {
         ok: true,
         message: "pong from authenticated socket",
+        receivedAt: new Date().toISOString(),
       });
     });
 
@@ -83,12 +96,12 @@ export function setupSocket(server: HttpServer): SocketIOServer {
 
   ioInstance = io;
 
-  console.log("[socket] initialized with auth");
+  console.log("[socket] initialized with typed auth");
 
   return io;
 }
 
-export function getIO(): SocketIOServer {
+export function getIO(): RealtimeServer {
   if (!ioInstance) {
     throw new Error("Socket.IO is not initialized");
   }

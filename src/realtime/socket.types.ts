@@ -1,81 +1,52 @@
+// src/realtime/socket.types.ts
+
+import { SOCKET_EVENTS } from "@/constants/socket";
 import type { Server, Socket } from "socket.io";
-import type { NotificationPriority, NotificationType } from "@/constants/notifications";
-import type { Permission } from "@/constants/permissions";
-import type { ProjectType } from "@/constants/projects";
-import type { Role } from "@/constants/roles";
 
-export type AuthenticatedSocketUser = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  roles: Role[];
-  permissions: Permission[];
-  sessionVersion: number;
-  projectIds?: string[];
+export type AuthSocketUser = {
+   id: string;
+   firstName: string;
+   lastName: string;
+   username: string;
+   sessionVersion: number;
+   roles:string[]; 
+   projectIds?: string[];
 };
 
-export type NotificationPayload = {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  priority: NotificationPriority;
-  isRead: boolean;
+export type SocketConnectedPayload = {
+  ok: true;
+  socketId: string;
   userId: string;
-  projectId?: string;
-  entityId?: string;
-  actionUrl?: string;
-  createdAt: Date;
+  roles: string[];
+  connectedAt: string;
 };
 
-export type ProjectEventPayload = {
-  id: string;
-  projectName: string;
-  type?: ProjectType;
-  createdAt: Date;
+export type PingServerPayload = {
+  message: string;
+  sentAt?: string;
+};
+
+export type PongClientPayload = {
+  ok: true;
+  message: string;
+  receivedAt: string;
 };
 
 export interface ServerToClientEvents {
-  "socket:connected": (payload: {
-    ok: true;
-    socketId: string;
-    userId: string;
-    connectedAt: string;
-  }) => void;
-  "notification:new": (payload: NotificationPayload) => void;
-  "notification:read": (payload: { id: string; isRead: true }) => void;
-  "notification:read-all": (payload: { isRead: true }) => void;
-  "project:created": (payload: ProjectEventPayload) => void;
-  "project:assigned": (payload: ProjectEventPayload) => void;
+    [SOCKET_EVENTS.CONNECTED]: (payload: SocketConnectedPayload) => void;
+  [SOCKET_EVENTS.PONG_CLIENT]: (payload: PongClientPayload) => void;
+
 }
 
+export interface ClientToServerEvents {
+  [SOCKET_EVENTS.PING_SERVER]: (payload: PingServerPayload) => void;
+}
 
-
-export interface ClientToServerEvents {}
 export interface InterServerEvents {}
 
 export interface SocketData {
-  user: AuthenticatedSocketUser;
+  user?: AuthSocketUser;
 }
-
-export type AuthenticatedSocketData = {
-  user: {
-    id: string;
-    username: string;
-    roles: string[];
-    sessionVersion: number;
-  };
-};
-
-
-export type RealtimeSocket = Socket<
-  ClientToServerEvents,
-  ServerToClientEvents,
-  InterServerEvents,
-  AuthenticatedSocketData
->;
-
 
 export type RealtimeServer = Server<
   ClientToServerEvents,
@@ -84,7 +55,7 @@ export type RealtimeServer = Server<
   SocketData
 >;
 
-export type AuthedSocket = Socket<
+export type RealtimeSocket = Socket<
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
